@@ -1,0 +1,162 @@
+{
+  "name": "postgresql_transaction_logs_causing_disk_space_issues",
+  "description": "This incident type pertains to an issue related to PostgreSQL transaction logs. The problem occurs when the transaction logs start filling up rapidly, leading to disk space issues. The growth of transaction logs is a normal occurrence, but it needs to be managed efficiently to prevent disk space problems. If the transaction logs are not managed properly, it can cause issues with the database's performance, and in some cases, can even crash the database. Therefore, it's important to monitor transaction logs growth and implement appropriate measures to manage it.",
+  "params": [
+    {
+      "name": "LOG_ROTATION_SIZE",
+      "value": ""
+    },
+    {
+      "name": "VERSION",
+      "value": ""
+    },
+    {
+      "name": "LOG_DIRECTORY",
+      "value": ""
+    },
+    {
+      "name": "LOG_ROTATION_AGE",
+      "value": ""
+    },
+    {
+      "name": "NUMBER_OF_DAYS_TO_RETAIN_LOGS",
+      "value": ""
+    },
+    {
+      "name": "DATABASE_NAME",
+      "value": ""
+    },
+    {
+      "name": "THRESHOLD_IN_PERCENTAGE",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## PostgreSQL transaction logs causing disk space issues.\nThis incident type pertains to an issue related to PostgreSQL transaction logs. The problem occurs when the transaction logs start filling up rapidly, leading to disk space issues. The growth of transaction logs is a normal occurrence, but it needs to be managed efficiently to prevent disk space problems. If the transaction logs are not managed properly, it can cause issues with the database's performance, and in some cases, can even crash the database. Therefore, it's important to monitor transaction logs growth and implement appropriate measures to manage it."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check disk space usage"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `df -h`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check PostgreSQL log file location"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo -u postgres psql -c 'SHOW log_directory;'`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## List all PostgreSQL log files"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo ls -lh ${LOG_DIRECTORY}`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the size of the largest PostgreSQL log file"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo du -hs ${LOG_DIRECTORY}/*`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the current size of the PostgreSQL transaction log"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo -u postgres psql -c 'SELECT pg_size_pretty(pg_current_xlog_location()-pg_xlog_location_diff(pg_control_checkpoint()));'`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the transaction log growth rate"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo -u postgres psql -c 'SELECT pg_size_pretty((SELECT setting FROM pg_settings WHERE name = '\\''wal_keep_segments'\\'')::int * (SELECT current_setting('\\''wal_segment_size'\\'')::int));'`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Large transactions: If the database is handling large transactions, it can quickly fill up the transaction logs and cause disk space issues. This can happen if the database is used for data-intensive applications."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_log_size_comparison($LOG_DIRECTORY, $DATABASE_NAME, $THRESHOLD_IN_PERCENTAGE)"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the PostgreSQL configuration parameters related to transaction logs, such as log_rotation_age, log_rotation_size, etc., and adjust them accordingly to manage the growth of transaction logs."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_change_postgresql_log_rotation_settings($LOG_ROTATION_SIZE, $VERSION, $LOG_ROTATION_AGE)"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Purge old transaction logs periodically to free up disk space. This can be done manually or through an automated script."
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_purge_old_logs($LOG_DIRECTORY, $NUMBER_OF_DAYS_TO_RETAIN_LOGS)"
+    }
+  ]
+}
