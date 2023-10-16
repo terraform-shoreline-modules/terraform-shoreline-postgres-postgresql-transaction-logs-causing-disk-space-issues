@@ -3,14 +3,6 @@
   "description": "This incident type pertains to an issue related to PostgreSQL transaction logs. The problem occurs when the transaction logs start filling up rapidly, leading to disk space issues. The growth of transaction logs is a normal occurrence, but it needs to be managed efficiently to prevent disk space problems. If the transaction logs are not managed properly, it can cause issues with the database's performance, and in some cases, can even crash the database. Therefore, it's important to monitor transaction logs growth and implement appropriate measures to manage it.",
   "params": [
     {
-      "name": "LOG_ROTATION_SIZE",
-      "value": ""
-    },
-    {
-      "name": "VERSION",
-      "value": ""
-    },
-    {
       "name": "LOG_DIRECTORY",
       "value": ""
     },
@@ -19,7 +11,15 @@
       "value": ""
     },
     {
-      "name": "NUMBER_OF_DAYS_TO_RETAIN_LOGS",
+      "name": "LOG_ROTATION_SIZE",
+      "value": ""
+    },
+    {
+      "name": "VERSION",
+      "value": ""
+    },
+    {
+      "name": "THRESHOLD_IN_PERCENTAGE",
       "value": ""
     },
     {
@@ -27,7 +27,7 @@
       "value": ""
     },
     {
-      "name": "THRESHOLD_IN_PERCENTAGE",
+      "name": "NUMBER_OF_DAYS_TO_RETAIN_LOGS",
       "value": ""
     },
     {
@@ -132,7 +132,7 @@
       "name": "cell_15",
       "type": "OP_LANG",
       "enabled": true,
-      "content": "host | host_name=$HOST_NAME | invoke_log_size_comparison($LOG_DIRECTORY, $DATABASE_NAME, $THRESHOLD_IN_PERCENTAGE)"
+      "content": "host | host_name=$HOST_NAME | invoke_transaction_logs_threshold_check($LOG_DIRECTORY, $THRESHOLD_IN_PERCENTAGE, $DATABASE_NAME)"
     },
     {
       "name": "cell_16",
@@ -144,7 +144,7 @@
       "name": "cell_17",
       "type": "OP_LANG",
       "enabled": true,
-      "content": "host | host_name=$HOST_NAME | invoke_change_postgresql_log_rotation_settings($LOG_ROTATION_SIZE, $VERSION, $LOG_ROTATION_AGE)"
+      "content": "host | host_name=$HOST_NAME | invoke_update_postgresql_logging($LOG_ROTATION_AGE, $LOG_ROTATION_SIZE, $VERSION)"
     },
     {
       "name": "cell_18",
@@ -156,7 +156,7 @@
       "name": "cell_19",
       "type": "OP_LANG",
       "enabled": true,
-      "content": "host | host_name=$HOST_NAME | invoke_purge_old_logs($LOG_DIRECTORY, $NUMBER_OF_DAYS_TO_RETAIN_LOGS)"
+      "content": "host | host_name=$HOST_NAME | invoke_log_purge($LOG_DIRECTORY, $NUMBER_OF_DAYS_TO_RETAIN_LOGS)"
     }
   ]
 }
